@@ -1,0 +1,197 @@
+#service discovery url
+#eureka:
+#   client:
+#      serviceUrl:
+#           defaultZone: http://localhost:29003/eureka/
+#   instance:
+#       leaseRenewalIntervalInSeconds: 3
+#       leaseExpirationDurationInSeconds: 9
+#service name
+
+db_setting:
+  username: tas
+  password: 123456xX
+  host: 192.168.2.35
+  port: 3306
+  db: talebase
+redis_setting:
+  host: 192.168.2.35
+  password: Talebase2017!
+  port: 6383
+
+rabbitmq_setting:
+  host: 192.168.2.35
+  port: 5675
+
+web_setting:
+  protocol: http
+  domain: testtas6.cepin.net
+  upload_domain: upload.testtas6.cepin.net
+  url: ${web_setting.protocol}://${web_setting.domain}
+
+datasource:
+  setting:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    initialSize : 5
+    maxActive: 500
+    maxWait: 60000
+    minIdle: 64
+    timeBetweenEvictionRunsMillis: 60000
+    minEvictableIdleTimeMillis: 300000
+    validationQuery: SELECT 1
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
+    poolPreparedStatements : true
+    maxOpenPreparedStatements: 50
+    removeAbandoned: true
+    removeAbandonedTimeout: 1800
+    logAbandoned: true
+    url: jdbc:mysql://${db_setting.host}:${db_setting.port}/${db_setting.db}?serverTimezone=GMT%2b8&useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowMultiQueries=true
+    username: ${db_setting.username}
+    password: ${db_setting.password}
+
+spring:
+  cloud:
+  #  配置这个之后，本地配置的优先级将优于远程配置
+    config:
+      override-none: true
+    stream:
+      bindings:
+        outputSendSms:
+          destination: sendSms
+          binder: rabbit
+        outputSaveSysMsg:
+          destination: saveSysMsg
+          binder: rabbit
+      binders:
+        rabbit:
+          type: rabbit    # spring.binders 文件中的key  表示类型
+          environment:
+            spring:
+              rabbitmq:
+                host: ${rabbitmq_setting.host}
+                port: ${rabbitmq_setting.port}
+#        database: 0
+  http:
+    multipart:
+      enabled: true
+      max-file-size: 10MB  #单个文件限制大小 单位：MB
+
+baseJedis:
+   host: ${redis_setting.host}
+   port: ${redis_setting.port}
+   password: ${redis_setting.password}
+   maxTotal: 64
+   minIdle: 20
+   timeout: 5000
+   masters:
+      - redisMaster
+   sentinels:
+      - ${redis_setting.host}:${redis_setting.port}
+
+myJedis:
+   host: ${redis_setting.host}
+   port: ${redis_setting.port}
+   password: ${redis_setting.password}
+   maxTotal: 64
+   minIdle: 20
+   timeout: 5000
+   masters:
+      - redisMaster
+   sentinels:
+      - ${redis_setting.host}:${redis_setting.port}
+
+#management:
+#  security:
+#    enabled: false
+
+endpoints:
+  shutdown:
+    enabled: true
+
+#api-gateway
+#examineeUrl: http://tas5.cepin.net/exam/login
+
+#os-crm
+examUrl: ${web_setting.url}/exam/login
+hrUrl: ${web_setting.url}/customer/login
+
+#os-my
+#attDomainName: tas5.cepin.net
+
+#os-product
+unpackReport:
+  document: D:\\unpackDataDocument
+  downloadUrl: ${web_setting.url}/
+  unpackUrl: ${web_setting.url}/report/pdfFiles
+  packUrl: ${web_setting.url}
+
+host:
+  downloadPDF: ${web_setting.protocol}://${web_setting.upload_domain}
+  replacedPath: /data/tas-5.x-report
+attDomainName: ${web_setting.domain}
+
+#os-project
+examineeUrl: ${web_setting.url}/exam/login
+examineeForCVTEUrl: ${web_setting.url}/exam/cvte-exam
+shortExamineeUrl: ${web_setting.url}/api
+qrcodeReqUrl: ${web_setting.url}
+
+mainUrl: ${web_setting.url}
+dirUrl: customer/report-push
+
+fdfs:   #注意：调用需要配置spring.jmx.enabled=false
+  so-timeout: 30000   #读取时间超时
+  connect-timeout: 120000   #连接超时时间
+  pool:
+    max-total: 300  #从池中借出的对象的最大数目
+    max-wait-millis: 120000 #获取连接池的最大等待毫秒数
+    test-on-borrow: true
+    test-on-return: false
+  tracker-list:            #TrackerList参数,支持多个
+    - 192.168.2.111:22122
+    - 192.168.2.35:22122
+  extra:
+    prodocol: http://
+    host: testtas6.cepin.net
+    support-format: jpg,jpeg,png,ppt,pptx,xls,xlsx,doc,docx,pdf,txt,csv,zip,gif,bmp
+    max-file-size: 20  #此属性用于判断 单位：MB
+
+file:
+  reportpdfPath: /data/tas/bz-report-compile-package/
+  importErrorLogPath: /data/tas/import-error-log/
+  sendNotitfyErrorLogPath: /data/tas/send-error-log/
+  qrcodePath: /data/tas5-upload/qrcode/
+  reportTemplatePath: /data/tas/bz-report-template-package/
+  reportPackPath: /data/tas/unpackDataDocument/
+  reportTemplateTpye: tex
+
+threadPool:
+  corePoolSize: 20
+  maxPoolSize: 50
+  queueCapacity: 1000
+  keepAliveSeconds: 60
+
+migrateServiceUrl: http://localhost:39001
+
+attachment:
+        upload:
+            path: /data/newtas51-upload
+        download:
+            path: ${web_setting.protocol}://${web_setting.upload_domain}
+
+server:
+  undertow:
+    worker-threads: 500
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          strategy: SEMAPHORE
+          semaphore:
+            maxConcurrentRequests: 500 #缺省为10
+        timeout:
+          enabled: false
